@@ -1,0 +1,6 @@
+@InvestmentSimulator.API_HostAddress = http://localhost:5282
+
+GET {{InvestmentSimulator.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
