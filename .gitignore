@@ -1,0 +1,26 @@
+## Ignore Visual Studio temporary files, build results, and generated files
+
+# User-specific files
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Build results
+[Bb]in/
+[Oo]bj/
+
+# Visual Studio 2019 cache/options
+.vs/
+
+# Rider
+.idea/
+
+# Mac
+.DS_Store
+
+# App Settings
+appsettings.Development.json
+
+# Secrets
+secrets.json
