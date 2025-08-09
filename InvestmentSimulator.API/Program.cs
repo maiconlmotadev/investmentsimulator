@@ -7,6 +7,7 @@ var builder = WebApplication.CreateBuilder(args);
 // Adicionar serviços
 builder.Services.AddControllers();
 builder.Services.AddScoped<ISimulationService, SimulationService>();
+builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IValidator<UserDto>, UserDtoValidator>();
 builder.Services.AddScoped<IValidator<Investment>, InvestmentValidator>();
 builder.Services.AddSwaggerGen(c =>

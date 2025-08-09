@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using InvestmentSimulator.Application.DTOs;
 using FluentValidation;
 using Microsoft.AspNetCore.Authorization;
+using InvestmentSimulator.Application.Services;
 
 namespace InvestmentSimulator.Controllers
 {
@@ -10,10 +11,12 @@ namespace InvestmentSimulator.Controllers
     public class UserController : ControllerBase
     {
         private readonly IValidator<UserDto> _validator;
+        private readonly IUserService _userService;
 
-        public UserController(IValidator<UserDto> validator)
+        public UserController(IValidator<UserDto> validator, IUserService userService)
         {
             _validator = validator;
+            _userService = userService;
         }
 
         [HttpPost("register")]
@@ -23,8 +26,9 @@ namespace InvestmentSimulator.Controllers
             var validationResult = await _validator.ValidateAsync(userDto);
             if (!validationResult.IsValid) return BadRequest(validationResult.Errors);
 
-            // Lógica de cadastro (ex.: salvar no banco)
-            return Ok(new { Message = "User registered successfully" });
+            var user = await _userService.RegisterAsync(userDto);
+
+            return Ok(new { Message = "User registered successfully", UserId = user.Id });
         }
 
         [HttpPost("login")]
