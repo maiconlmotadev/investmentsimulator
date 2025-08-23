@@ -18,11 +18,15 @@ namespace InvestmentSimulator.Application.Services
 
         public Task<User> RegisterAsync(UserDto userDto)
         {
+            if (userDto.Password == null) throw new ArgumentNullException(nameof(userDto.Password));
+            if (userDto.Name == null) throw new ArgumentNullException(nameof(userDto.Name));
+            if (userDto.Email == null) throw new ArgumentNullException(nameof(userDto.Email));
+
             // 1. Hash da senha (lógica de aplicação)
             var passwordHash = HashPassword(userDto.Password);
 
             // 2. Criação do modelo de domínio
-            var user = new User(userDto.Username, userDto.Email, passwordHash);
+            var user = new User(userDto.Name, userDto.Email, passwordHash);
 
             // 3. Salvar no banco de dados (a ser implementado)
             // await _userRepository.AddAsync(user);

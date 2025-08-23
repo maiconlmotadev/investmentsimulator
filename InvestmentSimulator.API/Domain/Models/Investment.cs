@@ -11,10 +11,6 @@ namespace InvestmentSimulator.Domain.Models
 
         public Investment(decimal initialAmount, decimal interestRate, int timePeriod, string userId)
         {
-            if (initialAmount <= 0) throw new ArgumentException("Initial amount must be positive.");
-            if (interestRate < 0) throw new ArgumentException("Interest rate cannot be negative.");
-            if (timePeriod <= 0) throw new ArgumentException("Time period must be positive.");
-
             InitialAmount = initialAmount;
             InterestRate = interestRate;
             TimePeriod = timePeriod;

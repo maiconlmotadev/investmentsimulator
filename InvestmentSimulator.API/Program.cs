@@ -1,6 +1,8 @@
 using InvestmentSimulator.Application.Services;
 using InvestmentSimulator.Application.DTOs;
 using Microsoft.OpenApi.Models;
+using FluentValidation;
+using InvestmentSimulator.Domain.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -14,7 +16,7 @@ builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo { Title = "Investment Simulator API", Version = "v1" });
 });
-builder.Services.AddAuthorization();
+
 
 var app = builder.Build();
 
@@ -26,7 +28,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-app.UseAuthorization();
+
 app.MapControllers();
 
 app.Run();

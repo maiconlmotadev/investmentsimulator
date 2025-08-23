@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using InvestmentSimulator.Application.DTOs;
 using FluentValidation;
-using Microsoft.AspNetCore.Authorization;
 using InvestmentSimulator.Application.Services;
 
 namespace InvestmentSimulator.Controllers
@@ -20,7 +19,7 @@ namespace InvestmentSimulator.Controllers
         }
 
         [HttpPost("register")]
-        [AllowAnonymous]
+        
         public async Task<IActionResult> Register([FromBody] UserDto userDto)
         {
             var validationResult = await _validator.ValidateAsync(userDto);
@@ -32,7 +31,7 @@ namespace InvestmentSimulator.Controllers
         }
 
         [HttpPost("login")]
-        [AllowAnonymous]
+        
         public IActionResult Login([FromBody] LoginDto loginDto)
         {
             // Lógica de autenticação

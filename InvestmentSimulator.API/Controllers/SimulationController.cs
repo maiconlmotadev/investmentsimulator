@@ -1,3 +1,4 @@
+
 using Microsoft.AspNetCore.Mvc;
 using InvestmentSimulator.Application.Services;
 using InvestmentSimulator.Domain.Models;
@@ -7,7 +8,7 @@ namespace InvestmentSimulator.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize] // Exige autenticação
+    
     public class SimulationController : ControllerBase
     {
         private readonly ISimulationService _simulationService;
@@ -20,12 +21,12 @@ namespace InvestmentSimulator.Controllers
         }
 
         [HttpPost("simulate")]
-        public async Task<IActionResult> Simulate([FromBody] Investment investment)
+        public IActionResult Simulate([FromBody] Investment investment)
         {
-            var validationResult = await _validator.ValidateAsync(investment);
+            var validationResult = _validator.Validate(investment);
             if (!validationResult.IsValid) return BadRequest(validationResult.Errors);
 
-            var result = await _simulationService.SimulateAsync(investment);
+            var result = _simulationService.Simulate(investment);
             return Ok(result);
         }
     }
