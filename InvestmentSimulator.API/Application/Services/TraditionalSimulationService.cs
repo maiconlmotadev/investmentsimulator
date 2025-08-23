@@ -2,7 +2,7 @@ using InvestmentSimulator.Domain.Models;
 
 namespace InvestmentSimulator.Application.Services
 {
-    public class SimulationService : ISimulationService
+    public class TraditionalSimulationService : ITraditionalSimulationService
     {
         public SimulationResult Simulate(Investment investment)
         {

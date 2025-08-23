@@ -1,0 +1,57 @@
+@page "/crypto-simulator"
+@using InvestmentSimulator.Domain.Models
+@using System.Net.Http.Json
+
+<h3>Crypto Investment Simulator</h3>
+
+<EditForm Model="@investment" OnValidSubmit="HandleSubmit">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div class="form-group">
+        <label for="cryptoId">Crypto ID (e.g., bitcoin):</label>
+        <InputText id="cryptoId" class="form-control" @bind-Value="investment.CryptoId" />
+    </div>
+
+    <div class="form-group">
+        <label for="initialAmount">Initial Amount:</label>
+        <InputNumber id="initialAmount" class="form-control" @bind-Value="investment.InitialAmount" />
+    </div>
+
+    <div class="form-group">
+        <label for="purchaseDate">Purchase Date:</label>
+        <InputDate id="purchaseDate" class="form-control" @bind-Value="investment.PurchaseDate" />
+    </div>
+
+    <button type="submit" class="btn btn-primary">Simulate</button>
+</EditForm>
+
+@if (result != null)
+{
+    <h4>Simulation Result:</h4>
+    <p>Final Value: @result.FinalValue.ToString("C")</p>
+    <p>Profit: @result.Profit.ToString("C")</p>
+    <p>Profit Percentage: @result.ProfitPercentage.ToString("F2")%</p>
+}
+
+@code {
+    private CryptoInvestment investment = new CryptoInvestment();
+    private CryptoSimulationResult? result;
+
+    [Inject]
+    public HttpClient? Http { get; set; }
+
+    private async Task HandleSubmit()
+    {
+        try
+        {
+            if (Http == null) return;
+            result = await Http.PostAsJsonAsync<CryptoInvestment>("api/simulation/crypto", investment).Result.Content.ReadFromJsonAsync<CryptoSimulationResult>();
+        }
+        catch (Exception ex)
+        {
+            // Log the exception or display an error message
+            Console.WriteLine($"Error: {ex.Message}");
+        }
+    }
+}
