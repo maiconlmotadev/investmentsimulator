@@ -2,16 +2,16 @@ using InvestmentSimulator.Domain.Models;
 
 namespace InvestmentSimulator.Application.Services
 {
-    public class CryptoSimulationService : ICryptoSimulationService
+    public class CryptoSimulatorService : ICryptoSimulatorService
     {
         private readonly ICryptoService _cryptoService;
 
-        public CryptoSimulationService(ICryptoService cryptoService)
+        public CryptoSimulatorService(ICryptoService cryptoService)
         {
             _cryptoService = cryptoService ?? throw new ArgumentNullException(nameof(cryptoService));
         }
 
-        public async Task<CryptoSimulationResult> SimulateCryptoInvestmentAsync(CryptoInvestment investment)
+        public async Task<CryptoSimulationResult> SimulateCryptoInvestmentAsync(CryptoSimulationInput investment)
         {
             if (investment.CryptoId == null) throw new ArgumentNullException(nameof(investment.CryptoId));
 

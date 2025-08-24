@@ -1,5 +1,5 @@
 @page "/crypto-simulator"
-@using InvestmentSimulator.Domain.Models
+@using InvestmentSimulator.Client.Models
 @using System.Net.Http.Json
 
 <h3>Crypto Investment Simulator</h3>
@@ -35,7 +35,7 @@
 }
 
 @code {
-    private CryptoInvestment investment = new CryptoInvestment();
+    private CryptoSimulationInput investment = new CryptoSimulationInput();
     private CryptoSimulationResult? result;
 
     [Inject]
@@ -46,7 +46,16 @@
         try
         {
             if (Http == null) return;
-            result = await Http.PostAsJsonAsync<CryptoInvestment>("api/simulation/crypto", investment).Result.Content.ReadFromJsonAsync<CryptoSimulationResult>();
+            var response = await Http.PostAsJsonAsync("api/simulation/crypto", investment);
+            if (response.IsSuccessStatusCode)
+            {
+                result = await response.Content.ReadFromJsonAsync<CryptoSimulationResult>();
+            }
+            else
+            {
+                // Handle error
+                result = null;
+            }
         }
         catch (Exception ex)
         {

@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace InvestmentSimulator.Domain.Models
 {
-    public class CryptoInvestment
+    public class CryptoSimulationInput
     {
         [Required]
         [RegularExpression("bitcoin", ErrorMessage = "Only bitcoin is supported at the moment.")]

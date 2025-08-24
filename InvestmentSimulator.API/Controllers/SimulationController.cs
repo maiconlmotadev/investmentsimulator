@@ -10,14 +10,14 @@ namespace InvestmentSimulator.Controllers
     [Route("api/[controller]")]
     public class SimulationController : ControllerBase
     {
-        private readonly ITraditionalSimulationService _traditionalSimulationService;
-        private readonly ICryptoSimulationService _cryptoSimulationService;
-        private readonly IValidator<Investment> _validator;
+        private readonly ITraditionalSimulatorService _traditionalSimulationService;
+        private readonly ICryptoSimulatorService _cryptoSimulationService;
+        private readonly IValidator<TraditionalSimulationInput> _validator;
 
         public SimulationController(
-            ITraditionalSimulationService traditionalSimulationService,
-            ICryptoSimulationService cryptoSimulationService,
-            IValidator<Investment> validator)
+            ITraditionalSimulatorService traditionalSimulationService,
+            ICryptoSimulatorService cryptoSimulationService,
+            IValidator<TraditionalSimulationInput> validator)
         {
             _traditionalSimulationService = traditionalSimulationService;
             _cryptoSimulationService = cryptoSimulationService;
@@ -25,7 +25,7 @@ namespace InvestmentSimulator.Controllers
         }
 
         [HttpPost("simulate")]
-        public IActionResult Simulate([FromBody] Investment investment)
+        public IActionResult Simulate([FromBody] TraditionalSimulationInput investment)
         {
             var validationResult = _validator.Validate(investment);
             if (!validationResult.IsValid) return BadRequest(validationResult.Errors);
@@ -35,7 +35,7 @@ namespace InvestmentSimulator.Controllers
         }
 
         [HttpPost("crypto")]
-        public async Task<IActionResult> SimulateCrypto([FromBody] CryptoInvestment investment)
+        public async Task<IActionResult> SimulateCrypto([FromBody] CryptoSimulationInput investment)
         {
             var result = await _cryptoSimulationService.SimulateCryptoInvestmentAsync(investment);
             return Ok(result);

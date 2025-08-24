@@ -1,6 +1,6 @@
 namespace InvestmentSimulator.Domain.Models
 {
-    public class Investment
+    public class TraditionalSimulationInput
     {
         public int Id { get; private set; }
         public string UserId { get; private set; }
@@ -9,7 +9,7 @@ namespace InvestmentSimulator.Domain.Models
         public int TimePeriod { get; private set; } // Em meses
         public DateTime CreatedAt { get; private set; } = DateTime.UtcNow;
 
-        public Investment(decimal initialAmount, decimal interestRate, int timePeriod, string userId)
+        public TraditionalSimulationInput(decimal initialAmount, decimal interestRate, int timePeriod, string userId)
         {
             InitialAmount = initialAmount;
             InterestRate = interestRate;

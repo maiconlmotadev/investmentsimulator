@@ -3,9 +3,9 @@ using InvestmentSimulator.Domain.Models;
 
 namespace InvestmentSimulator.Application.DTOs
 {
-    public class InvestmentValidator : AbstractValidator<Investment>
+    public class TraditionalSimulationInputValidator : AbstractValidator<TraditionalSimulationInput>
     {
-        public InvestmentValidator()
+        public TraditionalSimulationInputValidator()
         {
             RuleFor(x => x.InitialAmount).GreaterThan(0);
             RuleFor(x => x.InterestRate).GreaterThanOrEqualTo(0);

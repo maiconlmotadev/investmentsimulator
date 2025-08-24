@@ -12,9 +12,9 @@ builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<ICryptoService, CryptoService>();
 builder.Services.AddHttpClient<ICryptoService, CryptoService>();
 builder.Services.AddScoped<IValidator<UserDto>, UserDtoValidator>();
-builder.Services.AddScoped<IValidator<Investment>, InvestmentValidator>();
-builder.Services.AddScoped<ITraditionalSimulationService, TraditionalSimulationService>();
-builder.Services.AddScoped<ICryptoSimulationService, CryptoSimulationService>();
+builder.Services.AddScoped<IValidator<TraditionalSimulationInput>, TraditionalSimulationInputValidator>();
+builder.Services.AddScoped<ITraditionalSimulatorService, TraditionalSimulatorService>();
+builder.Services.AddScoped<ICryptoSimulatorService, CryptoSimulatorService>();
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo { Title = "Investment Simulator API", Version = "v1" });
