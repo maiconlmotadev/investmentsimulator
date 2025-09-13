@@ -22,20 +22,12 @@ build_property._RazorSourceGeneratorDebug =
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50cy9BcHAucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = 
 
-[/Volumes/MaiconFiles/softwareEngineering/PROJECTS/investmentsimulator/InvestmentSimulator.Client/Components/Pages/CryptoSimulator.razor]
-build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50cy9QYWdlcy9DcnlwdG9TaW11bGF0b3IucmF6b3I=
-build_metadata.AdditionalFiles.CssScope = 
-
 [/Volumes/MaiconFiles/softwareEngineering/PROJECTS/investmentsimulator/InvestmentSimulator.Client/Components/Pages/Error.razor]
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50cy9QYWdlcy9FcnJvci5yYXpvcg==
 build_metadata.AdditionalFiles.CssScope = 
 
 [/Volumes/MaiconFiles/softwareEngineering/PROJECTS/investmentsimulator/InvestmentSimulator.Client/Components/Pages/Home.razor]
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50cy9QYWdlcy9Ib21lLnJhem9y
-build_metadata.AdditionalFiles.CssScope = 
-
-[/Volumes/MaiconFiles/softwareEngineering/PROJECTS/investmentsimulator/InvestmentSimulator.Client/Components/Pages/TraditionalSimulator.razor]
-build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50cy9QYWdlcy9UcmFkaXRpb25hbFNpbXVsYXRvci5yYXpvcg==
 build_metadata.AdditionalFiles.CssScope = 
 
 [/Volumes/MaiconFiles/softwareEngineering/PROJECTS/investmentsimulator/InvestmentSimulator.Client/Components/Routes.razor]

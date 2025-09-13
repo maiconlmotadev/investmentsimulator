@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
-using InvestmentSimulator.Application.Services;
-using InvestmentSimulator.Domain.Models;
+using InvestmentSimulator.Application.Services.Simulation.Deposit;
+using InvestmentSimulator.Domain.Models.Simulation.Deposit;
 using FluentValidation;
 using System.Threading.Tasks;
 
@@ -10,34 +10,24 @@ namespace InvestmentSimulator.Controllers
     [Route("api/[controller]")]
     public class SimulationController : ControllerBase
     {
-        private readonly ITraditionalSimulatorService _traditionalSimulationService;
-        private readonly ICryptoSimulatorService _cryptoSimulationService;
-        private readonly IValidator<TraditionalSimulationInput> _validator;
+        private readonly IDepositSimulatorService _depositSimulatorService;
+        private readonly IValidator<DepositInput> _validator;
 
         public SimulationController(
-            ITraditionalSimulatorService traditionalSimulationService,
-            ICryptoSimulatorService cryptoSimulationService,
-            IValidator<TraditionalSimulationInput> validator)
+            IDepositSimulatorService depositSimulatorService,
+            IValidator<DepositInput> validator)
         {
-            _traditionalSimulationService = traditionalSimulationService;
-            _cryptoSimulationService = cryptoSimulationService;
+            _depositSimulatorService = depositSimulatorService;
             _validator = validator;
         }
 
         [HttpPost("simulate")]
-        public IActionResult Simulate([FromBody] TraditionalSimulationInput investment)
+        public async Task<IActionResult> SimulateAsync([FromBody] DepositInput investment)
         {
-            var validationResult = _validator.Validate(investment);
+            var validationResult = await _validator.ValidateAsync(investment);
             if (!validationResult.IsValid) return BadRequest(validationResult.Errors);
 
-            var result = _traditionalSimulationService.Simulate(investment);
-            return Ok(result);
-        }
-
-        [HttpPost("crypto")]
-        public async Task<IActionResult> SimulateCrypto([FromBody] CryptoSimulationInput investment)
-        {
-            var result = await _cryptoSimulationService.SimulateCryptoInvestmentAsync(investment);
+            var result = await _depositSimulatorService.SimulateAsync(investment);
             return Ok(result);
         }
     }
