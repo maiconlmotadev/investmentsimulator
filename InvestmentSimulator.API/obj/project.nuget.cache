@@ -1,12 +1,13 @@
 {
   "version": 2,
-  "dgSpecHash": "iYynv4WHiK4=",
+  "dgSpecHash": "etuhA0cyte0=",
   "success": true,
   "projectFilePath": "/Volumes/MaiconFiles/softwareEngineering/PROJECTS/investmentsimulator/InvestmentSimulator.API/InvestmentSimulator.API.csproj",
   "expectedPackageFiles": [
     "/Users/maiconmota/.nuget/packages/fluentvalidation/11.11.0/fluentvalidation.11.11.0.nupkg.sha512",
     "/Users/maiconmota/.nuget/packages/fluentvalidation.aspnetcore/11.3.1/fluentvalidation.aspnetcore.11.3.1.nupkg.sha512",
     "/Users/maiconmota/.nuget/packages/fluentvalidation.dependencyinjectionextensions/11.11.0/fluentvalidation.dependencyinjectionextensions.11.11.0.nupkg.sha512",
+    "/Users/maiconmota/.nuget/packages/microsoft.aspnetcore.components.webassembly.server/8.0.4/microsoft.aspnetcore.components.webassembly.server.8.0.4.nupkg.sha512",
     "/Users/maiconmota/.nuget/packages/microsoft.aspnetcore.openapi/8.0.18/microsoft.aspnetcore.openapi.8.0.18.nupkg.sha512",
     "/Users/maiconmota/.nuget/packages/microsoft.extensions.apidescription.server/6.0.5/microsoft.extensions.apidescription.server.6.0.5.nupkg.sha512",
     "/Users/maiconmota/.nuget/packages/microsoft.extensions.dependencyinjection.abstractions/2.1.0/microsoft.extensions.dependencyinjection.abstractions.2.1.0.nupkg.sha512",

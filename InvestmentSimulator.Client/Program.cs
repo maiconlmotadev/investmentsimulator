@@ -1,30 +1,12 @@
 using InvestmentSimulator.Client.Components;
-
+using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using System.Net.Http;
 
-var builder = WebApplication.CreateBuilder(args);
+var builder = WebAssemblyHostBuilder.CreateDefault(args);
 
-// Add services to the container.
-builder.Services.AddRazorComponents()
-    .AddInteractiveServerComponents();
-builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri("http://localhost:5282/") });
+builder.RootComponents.Add<App>("#app");
 
-var app = builder.Build();
+// The HttpClient is configured to use the base address of the hosting server (your API project).
+builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri("http://localhost:5284") });
 
-// Configure the HTTP request pipeline.
-if (!app.Environment.IsDevelopment())
-{
-    app.UseExceptionHandler("/Error", createScopeForErrors: true);
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
-    app.UseHsts();
-}
-
-// app.UseHttpsRedirection();
-
-app.UseStaticFiles();
-app.UseAntiforgery();
-
-app.MapRazorComponents<App>()
-    .AddInteractiveServerRenderMode();
-
-app.Run();
+await builder.Build().RunAsync();

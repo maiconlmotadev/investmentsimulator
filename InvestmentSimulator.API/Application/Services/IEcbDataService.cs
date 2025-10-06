@@ -5,5 +5,7 @@ namespace InvestmentSimulator.Application.Services
         Task<double?> GetLatestInflationRateAsync();
         Task<double?> GetDepositRateUpToOneYearAsync();
         Task<double?> GetDepositRateOverTwoYearsAsync();
+        Task<double?> GetDepositFacilityRateAsync();
+        Task<double?> GetTenYearGovernmentBondYieldAsync();
     }
 }

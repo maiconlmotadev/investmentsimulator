@@ -1,8 +1,44 @@
 @page "/"
-@using System.Net.Http
+@rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
+@using System.Globalization
 @using System.Net.Http.Json
-@using InvestmentSimulator.Client.Models.Simulation.Deposit
+@using System.Text.Json
+
+
 @inject HttpClient Http
+@using InvestmentSimulator.Client.Models.Simulation.Deposit
+
+@code {
+    private List<CountryTaxRate> countryTaxRates = new()
+    {
+        new CountryTaxRate { Country = "Portugal", TaxRate = 28 },
+        new CountryTaxRate { Country = "Spain", TaxRate = 19 },
+        new CountryTaxRate { Country = "Germany", TaxRate = 25 },
+        new CountryTaxRate { Country = "France", TaxRate = 30 },
+        new CountryTaxRate { Country = "Italy", TaxRate = 26 },
+        new CountryTaxRate { Country = "Netherlands", TaxRate = 31 },
+        new CountryTaxRate { Country = "Belgium", TaxRate = 30 },
+        new CountryTaxRate { Country = "United Kingdom", TaxRate = 20 },
+        new CountryTaxRate { Country = "United States", TaxRate = 15 },
+        new CountryTaxRate { Country = "Brazil", TaxRate = 15 },
+        new CountryTaxRate { Country = "Other", TaxRate = 0 }
+    };
+    private string selectedCountry = string.Empty;
+
+    private void OnCountryChanged(ChangeEventArgs e)
+    {
+        selectedCountry = e.Value?.ToString() ?? string.Empty;
+        var found = countryTaxRates.FirstOrDefault(c => c.Country == selectedCountry);
+        if (found != null && found.TaxRate > 0)
+        {
+            investmentInput.TaxRate = (decimal?)found.TaxRate;
+        }
+        else
+        {
+            investmentInput.TaxRate = null;
+        }
+    }
+}
 
 <PageTitle>Investment Simulator</PageTitle>
 
@@ -13,37 +49,65 @@
 
         <div class="card">
             <div class="card-body">
-                <EditForm Model="@investmentInput" OnValidSubmit="HandleSubmit" FormName="depositSimForm">
+                <EditForm Model="@investmentInput" OnValidSubmit="@HandleValidSubmit" FormName="depositSimForm">
                     <DataAnnotationsValidator />
-                    <ValidationSummary />
 
                     <div class="mb-3">
                         <label for="initialAmount" class="form-label">Initial Amount (€)</label>
                         <InputNumber id="initialAmount" class="form-control" @bind-Value="investmentInput.InitialAmount" />
+                        <ValidationMessage For="@(() => investmentInput.InitialAmount)" />
                     </div>
 
                     <div class="mb-3">
                         <label for="timePeriod" class="form-label">Time Period (Months)</label>
                         <InputNumber id="timePeriod" class="form-control" @bind-Value="investmentInput.TimePeriodInMonths" />
+                        <ValidationMessage For="@(() => investmentInput.TimePeriodInMonths)" />
                     </div>
 
                     <div class="mb-3">
                         <label for="term" class="form-label">Investment Term</label>
                         <InputSelect id="term" class="form-select" @bind-Value="investmentInput.Term">
-                            @foreach (var termValue in Enum.GetValues(typeof(InvestmentTerm)))
-                            {
-                                <option value="@termValue">@termValue</option>
-                            }
+                            <option value="@InvestmentTerm.UpTo1Year">Up to 1 Year</option>
+                            <option value="@InvestmentTerm.Over2Years">Over 2 Years</option>
                         </InputSelect>
                     </div>
 
                     <div class="mb-3">
+                        <label for="country" class="form-label">Country</label>
+                        <select id="country" class="form-select" @onchange="OnCountryChanged">
+                            <option value="">Select a country</option>
+                            @foreach (var c in countryTaxRates)
+                            {
+                                <option value="@c.Country">@c.Country</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="mb-3">
                         <label for="taxRate" class="form-label">Capital Gains Tax Rate (%) (Optional)</label>
                         <InputNumber id="taxRate" class="form-control" @bind-Value="investmentInput.TaxRate" />
+                        <div class="form-text">This value is filled automatically when you select a country, but you can change it manually.</div>
                     </div>
 
-                    <button type="submit" class="btn btn-primary">Simulate</button>
+                    <button type="submit" class="btn btn-primary" disabled="@isLoading">
+                        @if (isLoading)
+                        {
+                            <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                            <span> Simulating...</span>
+                        }
+                        else
+                        {
+                            <span>Simulate</span>
+                        }
+                    </button>
                 </EditForm>
+
+                @if (!string.IsNullOrEmpty(errorMessage))
+                {
+                    <div class="alert alert-danger mt-3" role="alert">
+                        <strong>Error:</strong> @errorMessage
+                    </div>
+                }
+
             </div>
         </div>
     </div>
@@ -51,19 +115,25 @@
     @if (simulationResult != null)
     {
         <div class="col-md-8">
+            @if (simulationResult.UsedFallbackData)
+            {
+                <div class="alert alert-warning" role="alert">
+                    <strong>Warning:</strong> Could not retrieve live market data from the ECB. The simulation was run using estimated rates (2.5% interest, 2.0% inflation).
+                </div>
+            }
             <h2>Simulation Result</h2>
             
             <div class="card bg-light mb-3">
                 <div class="card-header">Summary</div>
                 <div class="card-body">
                     <div class="row">
-                        <div class="col">
-                            <p><strong>Final Net Value:</strong> <span class="text-success">@simulationResult.FinalNetValue.ToString("C")</span></p>
-                            <p><strong>Net Interest Earned:</strong> @simulationResult.NetInterestEarned.ToString("C")</p>
+                        <div class="col-sm-6">
+                            <p><strong>Final Net Value:</strong> <span class="text-success">@simulationResult.FinalNetValue.ToString("C", CultureInfo.GetCultureInfo("pt-PT"))</span></p>
+                            <p><strong>Net Interest Earned:</strong> @simulationResult.NetInterestEarned.ToString("C", CultureInfo.GetCultureInfo("pt-PT"))</p>
                         </div>
-                        <div class="col">
-                            <p><strong>Final Real Value (after inflation):</strong> <span class="text-info">@simulationResult.FinalRealValue.ToString("C")</span></p>
-                            <p><strong>Real Interest Earned:</strong> @simulationResult.RealInterestEarned.ToString("C")</p>
+                        <div class="col-sm-6">
+                            <p><strong>Final Real Value (after inflation):</strong> <span class="text-info">@simulationResult.FinalRealValue.ToString("C", CultureInfo.GetCultureInfo("pt-PT"))</span></p>
+                            <p><strong>Real Interest Earned:</strong> @simulationResult.RealInterestEarned.ToString("C", CultureInfo.GetCultureInfo("pt-PT"))</p>
                         </div>
                     </div>
                 </div>
@@ -76,15 +146,15 @@
                         <ul class="list-group list-group-flush">
                             <li class="list-group-item d-flex justify-content-between align-items-center">
                                 Total Interest Earned (Gross)
-                                <span>@simulationResult.TotalInterestEarned.ToString("C")</span>
+                                <span>@simulationResult.TotalInterestEarned.ToString("C", CultureInfo.GetCultureInfo("pt-PT"))</span>
                             </li>
                             <li class="list-group-item d-flex justify-content-between align-items-center">
                                 Total Tax Paid
-                                <span class="text-danger">-@simulationResult.TotalTaxPaid.ToString("C")</span>
+                                <span class="text-danger">-@simulationResult.TotalTaxPaid.ToString("C", CultureInfo.GetCultureInfo("pt-PT"))</span>
                             </li>
                             <li class="list-group-item d-flex justify-content-between align-items-center">
                                 Value Lost to Inflation
-                                <span class="text-warning">-@simulationResult.TotalValueLostToInflation.ToString("C")</span>
+                                <span class="text-warning">-@simulationResult.TotalValueLostToInflation.ToString("C", CultureInfo.GetCultureInfo("pt-PT"))</span>
                             </li>
                         </ul>
                     </div>
@@ -121,9 +191,9 @@
                     {
                         <tr>
                             <td>@item.Year</td>
-                            <td>@item.StartingBalance.ToString("C")</td>
-                            <td>@item.InterestEarned.ToString("C")</td>
-                            <td>@item.EndingBalance.ToString("C")</td>
+                            <td>@item.StartingBalance.ToString("C", CultureInfo.GetCultureInfo("pt-PT"))</td>
+                            <td>@item.InterestEarned.ToString("C", CultureInfo.GetCultureInfo("pt-PT"))</td>
+                            <td>@item.EndingBalance.ToString("C", CultureInfo.GetCultureInfo("pt-PT"))</td>
                         </tr>
                     }
                 </tbody>
@@ -135,19 +205,60 @@
 @code {
     private DepositInput investmentInput = new();
     private DepositResult? simulationResult;
+    private string? errorMessage;
+    private bool isLoading = false;
 
-    private async Task HandleSubmit()
+    private async Task HandleValidSubmit()
     {
-        var response = await Http.PostAsJsonAsync("/api/simulation/simulate", investmentInput);
+        // Limpa resultados e erros anteriores antes de uma nova submissão
+        // simulationResult = null; // Comentado para não limpar o resultado anterior até que um novo chegue
+        errorMessage = null;
+        isLoading = true;
 
-        if (response.IsSuccessStatusCode)
+        try
         {
-            simulationResult = await response.Content.ReadFromJsonAsync<DepositResult>();
+            var response = await Http.PostAsJsonAsync("/api/simulation/simulate", investmentInput);
+
+            if (response.IsSuccessStatusCode)
+            {
+                simulationResult = await response.Content.ReadFromJsonAsync<DepositResult>();
+            }
+            else
+            {
+                // Limpa o resultado anterior se a nova simulação falhar
+                simulationResult = null; 
+                var errorContent = await response.Content.ReadAsStringAsync();
+                
+                // Tenta interpretar a resposta de erro da API para uma mensagem mais limpa.
+                try
+                {
+                    var validationProblemDetails = JsonSerializer.Deserialize<ValidationProblemDetails>(errorContent, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                    var firstError = validationProblemDetails?.Errors.FirstOrDefault().Value.FirstOrDefault();
+                    errorMessage = !string.IsNullOrEmpty(firstError) ? firstError : "An unknown validation error occurred.";
+                }
+                catch
+                {
+                    // Se não for um erro de validação padrão, mostra o conteúdo bruto.
+                    errorMessage = $"An error occurred: {errorContent}";
+                }
+            }
         }
-        else
+        catch (Exception ex)
         {
-            // Handle error (e.g., show an error message)
-            simulationResult = null;
+            // Captura exceções de rede ou outras falhas que impedem a comunicação com a API.
+            errorMessage = $"A communication error occurred: {ex.Message}";
         }
+        finally
+        {
+            // Garante que o estado de carregamento seja desativado, mesmo se ocorrer um erro.
+            isLoading = false;
+        }
+    }
+
+    // Classe auxiliar para desserializar erros de validação da API.
+    private class ValidationProblemDetails
+    {
+        public string Title { get; set; } = string.Empty;
+        public Dictionary<string, string[]> Errors { get; set; } = new();
     }
 }

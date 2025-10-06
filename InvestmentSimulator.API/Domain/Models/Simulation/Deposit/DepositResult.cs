@@ -21,6 +21,7 @@ namespace InvestmentSimulator.Domain.Models.Simulation.Deposit
         // Context
         public decimal InterestRateUsed { get; set; }
         public decimal InflationRateUsed { get; set; }
+        public bool UsedFallbackData { get; set; }
 
         // Evolution
         public List<DepositYearlyBreakdown> Evolution { get; set; } = new List<DepositYearlyBreakdown>();
