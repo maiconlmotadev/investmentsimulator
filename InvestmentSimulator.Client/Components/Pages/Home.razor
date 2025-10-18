@@ -8,38 +8,6 @@
 @inject HttpClient Http
 @using InvestmentSimulator.Client.Models.Simulation.Deposit
 
-@code {
-    private List<CountryTaxRate> countryTaxRates = new()
-    {
-        new CountryTaxRate { Country = "Portugal", TaxRate = 28 },
-        new CountryTaxRate { Country = "Spain", TaxRate = 19 },
-        new CountryTaxRate { Country = "Germany", TaxRate = 25 },
-        new CountryTaxRate { Country = "France", TaxRate = 30 },
-        new CountryTaxRate { Country = "Italy", TaxRate = 26 },
-        new CountryTaxRate { Country = "Netherlands", TaxRate = 31 },
-        new CountryTaxRate { Country = "Belgium", TaxRate = 30 },
-        new CountryTaxRate { Country = "United Kingdom", TaxRate = 20 },
-        new CountryTaxRate { Country = "United States", TaxRate = 15 },
-        new CountryTaxRate { Country = "Brazil", TaxRate = 15 },
-        new CountryTaxRate { Country = "Other", TaxRate = 0 }
-    };
-    private string selectedCountry = string.Empty;
-
-    private void OnCountryChanged(ChangeEventArgs e)
-    {
-        selectedCountry = e.Value?.ToString() ?? string.Empty;
-        var found = countryTaxRates.FirstOrDefault(c => c.Country == selectedCountry);
-        if (found != null && found.TaxRate > 0)
-        {
-            investmentInput.TaxRate = (decimal?)found.TaxRate;
-        }
-        else
-        {
-            investmentInput.TaxRate = null;
-        }
-    }
-}
-
 <PageTitle>Investment Simulator</PageTitle>
 
 <div class="row">
@@ -47,7 +15,7 @@
         <h1>Euro Deposit Simulator</h1>
         <p class="mb-4">See how your investment grows with real ECB rates.</p>
 
-        <div class="card">
+        <div class="card mb-4">
             <div class="card-body">
                 <EditForm Model="@investmentInput" OnValidSubmit="@HandleValidSubmit" FormName="depositSimForm">
                     <DataAnnotationsValidator />
@@ -88,8 +56,8 @@
                         <div class="form-text">This value is filled automatically when you select a country, but you can change it manually.</div>
                     </div>
 
-                    <button type="submit" class="btn btn-primary" disabled="@isLoading">
-                        @if (isLoading)
+                    <button type="submit" class="btn btn-primary" disabled="@isSimulating">
+                        @if (isSimulating)
                         {
                             <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
                             <span> Simulating...</span>
@@ -108,6 +76,44 @@
                     </div>
                 }
 
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">Live Economic Indicators</div>
+            <div class="card-body">
+                @if (isMarketDataLoading)
+                {
+                    <div class="d-flex align-items-center">
+                        <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                        <span class="ms-2">Loading market data...</span>
+                    </div>
+                }
+                else
+                {
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            Eurozone Inflation (HICP)
+                            <span class="badge bg-primary rounded-pill">@(FormatRate(latestInflationRate))</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            Deposit Rate (&lt;1Y)
+                            <span class="badge bg-primary rounded-pill">@(FormatRate(depositRateUpToOneYear))</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            Deposit Rate (&gt;2Y)
+                            <span class="badge bg-primary rounded-pill">@(FormatRate(depositRateOverTwoYears))</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            ECB Deposit Facility
+                            <span class="badge bg-primary rounded-pill">@(FormatRate(depositFacilityRate))</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            10Y Gov. Bond Yield
+                            <span class="badge bg-primary rounded-pill">@(FormatRate(tenYearGovernmentBondYield))</span>
+                        </li>
+                    </ul>
+                }
             </div>
         </div>
     </div>
@@ -206,14 +212,76 @@
     private DepositInput investmentInput = new();
     private DepositResult? simulationResult;
     private string? errorMessage;
-    private bool isLoading = false;
+    private bool isSimulating = false;
+    private bool isMarketDataLoading = true;
+
+    private double? latestInflationRate;
+    private double? depositRateUpToOneYear;
+    private double? depositRateOverTwoYears;
+    private double? depositFacilityRate;
+    private double? tenYearGovernmentBondYield;
+
+    private List<CountryTaxRate> countryTaxRates = new()
+    {
+        new CountryTaxRate { Country = "Portugal", TaxRate = 28 },
+        new CountryTaxRate { Country = "Spain", TaxRate = 19 },
+        new CountryTaxRate { Country = "Germany", TaxRate = 25 },
+        new CountryTaxRate { Country = "France", TaxRate = 30 },
+        new CountryTaxRate { Country = "Italy", TaxRate = 26 },
+        new CountryTaxRate { Country = "Netherlands", TaxRate = 31 },
+        new CountryTaxRate { Country = "Belgium", TaxRate = 30 },
+        new CountryTaxRate { Country = "United Kingdom", TaxRate = 20 },
+        new CountryTaxRate { Country = "United States", TaxRate = 15 },
+        new CountryTaxRate { Country = "Brazil", TaxRate = 15 },
+        new CountryTaxRate { Country = "Other", TaxRate = 0 }
+    };
+    private string selectedCountry = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        isMarketDataLoading = true;
+        try
+        {
+            latestInflationRate = await Http.GetFromJsonAsync<double?>("/api/marketdata/inflation");
+            depositRateUpToOneYear = await Http.GetFromJsonAsync<double?>("/api/marketdata/deposit-rate-up-to-one-year");
+            depositRateOverTwoYears = await Http.GetFromJsonAsync<double?>("/api/marketdata/deposit-rate-over-two-years");
+            depositFacilityRate = await Http.GetFromJsonAsync<double?>("/api/marketdata/deposit-facility-rate");
+            tenYearGovernmentBondYield = await Http.GetFromJsonAsync<double?>("/api/marketdata/ten-year-government-bond-yield");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error fetching market data: {ex.Message}");
+            // Handle error appropriately, maybe set a flag to show an error message
+        }
+        finally
+        {
+            isMarketDataLoading = false;
+        }
+    }
+
+    private string FormatRate(double? rate)
+    {
+        return rate.HasValue ? $"{rate.Value:F2}%" : "N/A";
+    }
+
+    private void OnCountryChanged(ChangeEventArgs e)
+    {
+        selectedCountry = e.Value?.ToString() ?? string.Empty;
+        var found = countryTaxRates.FirstOrDefault(c => c.Country == selectedCountry);
+        if (found != null && found.TaxRate > 0)
+        {
+            investmentInput.TaxRate = (decimal?)found.TaxRate;
+        }
+        else
+        {
+            investmentInput.TaxRate = null;
+        }
+    }
 
     private async Task HandleValidSubmit()
     {
-        // Limpa resultados e erros anteriores antes de uma nova submissão
-        // simulationResult = null; // Comentado para não limpar o resultado anterior até que um novo chegue
         errorMessage = null;
-        isLoading = true;
+        isSimulating = true;
 
         try
         {
@@ -225,11 +293,9 @@
             }
             else
             {
-                // Limpa o resultado anterior se a nova simulação falhar
                 simulationResult = null; 
                 var errorContent = await response.Content.ReadAsStringAsync();
                 
-                // Tenta interpretar a resposta de erro da API para uma mensagem mais limpa.
                 try
                 {
                     var validationProblemDetails = JsonSerializer.Deserialize<ValidationProblemDetails>(errorContent, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
@@ -238,24 +304,20 @@
                 }
                 catch
                 {
-                    // Se não for um erro de validação padrão, mostra o conteúdo bruto.
                     errorMessage = $"An error occurred: {errorContent}";
                 }
             }
         }
         catch (Exception ex)
         {
-            // Captura exceções de rede ou outras falhas que impedem a comunicação com a API.
             errorMessage = $"A communication error occurred: {ex.Message}";
         }
         finally
         {
-            // Garante que o estado de carregamento seja desativado, mesmo se ocorrer um erro.
-            isLoading = false;
+            isSimulating = false;
         }
     }
 
-    // Classe auxiliar para desserializar erros de validação da API.
     private class ValidationProblemDetails
     {
         public string Title { get; set; } = string.Empty;

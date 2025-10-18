@@ -1,12 +1,17 @@
 using InvestmentSimulator.Client.Components;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
-using System.Net.Http;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
 
 builder.RootComponents.Add<App>("#app");
 
-// The HttpClient is configured to use the base address of the hosting server (your API project).
-builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri("http://localhost:5284") });
+// Configure HttpClient to use the API's base address
+builder.Services.AddHttpClient("InvestmentSimulator.API", client =>
+{
+    client.BaseAddress = new Uri("http://localhost:5284");
+});
+
+// Make the configured HttpClient available for injection
+builder.Services.AddScoped(sp => sp.GetRequiredService<IHttpClientFactory>().CreateClient("InvestmentSimulator.API"));
 
 await builder.Build().RunAsync();

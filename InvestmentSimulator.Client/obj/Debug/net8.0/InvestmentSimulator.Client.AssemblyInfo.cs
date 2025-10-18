@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("InvestmentSimulator.Client")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+c6b519a249f77987f4314060cea7f808167c9356")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+627c9b6fe1d9520247c8f827619aa40312e622cf")]
 [assembly: System.Reflection.AssemblyProductAttribute("InvestmentSimulator.Client")]
 [assembly: System.Reflection.AssemblyTitleAttribute("InvestmentSimulator.Client")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

@@ -1,10 +1,11 @@
+
+using System;
 using System.Linq;
 using System.Net.Http;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Threading.Tasks;
-using InvestmentSimulator.Domain.Models.Ecb;
 using Microsoft.Extensions.Caching.Memory;
-using System;
 using Microsoft.Extensions.Logging;
 
 namespace InvestmentSimulator.Application.Services
@@ -14,7 +15,7 @@ namespace InvestmentSimulator.Application.Services
         private readonly HttpClient _httpClient;
         private readonly IMemoryCache _cache;
         private readonly ILogger<EcbDataService> _logger;
-        private const string InflationSeriesKey = "ICP.M.U2.N.000000.4.ANR";
+        private const string InflationSeriesKey = "M.U2.N.000000.4.ANR";
         private const string DepositRateUpToOneYearKey = "MIR.M.U2.B.L22.F.R.A.2250.EUR.N";
         private const string DepositRateOverTwoYearsKey = "MIR.M.U2.B.L22.H.R.A.2250.EUR.N";
         private const string DepositFacilityRateKey = "FM.B.U2.EUR.4F.KR.DFR.HLN";
@@ -32,125 +33,98 @@ namespace InvestmentSimulator.Application.Services
 
         public async Task<double?> GetLatestInflationRateAsync()
         {
-            return await GetLatestValueFromApiAsync(InflationSeriesKey);
+            return await GetLatestValueFromApiAsync("ICP", InflationSeriesKey);
         }
 
         public async Task<double?> GetDepositRateUpToOneYearAsync()
         {
-            return await GetLatestValueFromApiAsync(DepositRateUpToOneYearKey);
+            return await GetLatestValueFromApiAsync("MIR", DepositRateUpToOneYearKey);
         }
 
         public async Task<double?> GetDepositRateOverTwoYearsAsync()
         {
-            return await GetLatestValueFromApiAsync(DepositRateOverTwoYearsKey);
+            return await GetLatestValueFromApiAsync("MIR", DepositRateOverTwoYearsKey);
         }
 
         public async Task<double?> GetDepositFacilityRateAsync()
         {
-            return await GetLatestValueFromApiAsync(DepositFacilityRateKey);
+            return await GetLatestValueFromApiAsync("FM", DepositFacilityRateKey);
         }
 
         public async Task<double?> GetTenYearGovernmentBondYieldAsync()
         {
-            return await GetLatestValueFromApiAsync(TenYearGovernmentBondYieldKey);
+            return await GetLatestValueFromApiAsync("YC", TenYearGovernmentBondYieldKey);
         }
 
-        private async Task<double?> GetLatestValueFromApiAsync(string seriesKey)
+        private async Task<double?> GetLatestValueFromApiAsync(string flowRef, string seriesKey)
         {
-            // Tenta obter o valor do cache primeiro. A chave do cache é a própria seriesKey.
             if (_cache.TryGetValue(seriesKey, out double? cachedValue))
             {
                 return cachedValue;
             }
 
-            // Se não estiver no cache, busca na API.
-            var valueFromApi = await FetchValueFromApi(seriesKey);
+            var valueFromApi = await FetchValueFromApi(flowRef, seriesKey);
 
             if (valueFromApi.HasValue)
             {
-                // Armazena o valor obtido no cache com uma validade de 12 horas.
                 var cacheEntryOptions = new MemoryCacheEntryOptions()
                     .SetAbsoluteExpiration(TimeSpan.FromHours(12));
-
                 _cache.Set(seriesKey, valueFromApi, cacheEntryOptions);
             }
 
             return valueFromApi;
         }
 
-        private async Task<double?> FetchValueFromApi(string seriesKey)
+        private async Task<double?> FetchValueFromApi(string flowRef, string seriesKey)
         {
             try
             {
-                var response = await _httpClient.GetAsync(seriesKey);
-                _logger.LogInformation("ECB API request for series {SeriesKey}: StatusCode={StatusCode}", seriesKey, response.StatusCode);
+                var requestUrl = $"{flowRef}/{seriesKey}?lastnobservations=1&format=jsondata";
+                var response = await _httpClient.GetAsync(requestUrl);
 
-                var jsonResponse = await response.Content.ReadAsStringAsync();
-                _logger.LogInformation("ECB API response for series {SeriesKey}: {JsonResponse}", seriesKey, jsonResponse);
-
-                // Lança uma exceção se a resposta da API não for bem-sucedida (ex: 404, 500).
                 if (!response.IsSuccessStatusCode)
                 {
-                    _logger.LogError("ECB API returned a non-success status code for series {SeriesKey}: {StatusCode}. Response: {JsonResponse}", seriesKey, response.StatusCode, jsonResponse);
-                    throw new HttpRequestException($"ECB API request for series '{seriesKey}' failed with status code {response.StatusCode}.");
+                    _logger.LogError("ECB API request for series {SeriesKey} failed with status code {StatusCode}.", seriesKey, response.StatusCode);
+                    return null; // Retorna nulo em vez de lançar exceção para não quebrar a simulação
                 }
 
-                // Adiciona PropertyNameCaseInsensitive para maior robustez na desserialização.
-                var ecbData = JsonSerializer.Deserialize<EcbDataResponse>(jsonResponse, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                var jsonResponse = await response.Content.ReadAsStringAsync();
+                
+                // Usa JsonNode para uma análise robusta e à prova de falhas.
+                JsonNode? root = JsonNode.Parse(jsonResponse);
 
-                if (!TryGetLatestObservation(ecbData, out var latestObservation))
+                // Navega pela estrutura do JSON de forma segura.
+                JsonNode? observationsNode = root?["dataSets"]?[0]?["series"]?.AsObject().FirstOrDefault().Value?["observations"];
+
+                if (observationsNode == null)
                 {
-                    // Lança um erro se a estrutura da resposta for válida, mas o dado não for encontrado.
-                    throw new InvalidOperationException($"Não foi possível encontrar a última observação para a série '{seriesKey}' na resposta da API do BCE.");
+                    _logger.LogWarning("Could not find 'observations' node in ECB response for series {SeriesKey}.", seriesKey);
+                    return null;
                 }
-                return latestObservation;
-            }
-            catch (HttpRequestException ex)
-            {
-                // Captura erros de rede ou códigos de status de erro HTTP.
-                _logger.LogError(ex, "Erro ao comunicar com a API do BCE para a série '{SeriesKey}'.", seriesKey);
-                throw new InvalidOperationException($"Erro ao comunicar com a API do BCE para a série '{seriesKey}'.", ex);
-            }
-        }
 
-        private bool TryGetLatestObservation(EcbDataResponse? ecbData, out double? observationValue)
-        {
-            observationValue = null;
-            if (ecbData?.DataSets == null || !ecbData.DataSets.Any())
-            {
-                _logger.LogWarning("ECB response for does not contain DataSets.");
-                return false;
-            }
+                // A última observação é o último par chave-valor no objeto de observações.
+                var lastObservation = observationsNode.AsObject().LastOrDefault();
 
-            var series = ecbData.DataSets.First().Series;
-            if (series == null || !series.Any())
-            {
-                _logger.LogWarning("ECB DataSet does not contain Series.");
-                return false;
-            }
+                // O valor está no primeiro item do array da observação.
+                double? latestValue = lastObservation.Value?[0]?.GetValue<double?>();
 
-            var observations = series.First().Value.Observations;
-            if (observations == null || !observations.Any())
-            {
-                _logger.LogWarning("ECB Series does not contain Observations.");
-                return false;
+                if (latestValue.HasValue)
+                {
+                    _logger.LogInformation("Successfully extracted value {Value} for series {SeriesKey}.", latestValue.Value, seriesKey);
+                    return latestValue;
+                }
+                else
+                {
+                    _logger.LogWarning("Latest observation value for series {SeriesKey} is null or not found.", seriesKey);
+                    return null;
+                }
             }
-
-            var lastObservation = observations.Last().Value;
-            if (lastObservation == null || !lastObservation.Any())
+            catch (Exception ex)
             {
-                _logger.LogWarning("ECB last observation does not contain a value list.");
-                return false;
+                // Captura qualquer exceção durante o processo para evitar o erro 500.
+                _logger.LogError(ex, "An unexpected error occurred in FetchValueFromApi for series {SeriesKey}.", seriesKey);
+                return null; // Retorna nulo para que a aplicação continue funcionando com dados de fallback.
             }
-
-            observationValue = lastObservation.First();
-            if (!observationValue.HasValue)
-            {
-                _logger.LogWarning("ECB last observation value is null.");
-                return false;
-            }
-            
-            return true;
         }
     }
 }
